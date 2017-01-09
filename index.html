@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Canvas</title>
+
+<style type="text/css">
+#image {
+max-width: 100%;
+  max-height: 100%; 
+
+}
+
+</style>
+
+<link  href="\node_modules\cropper\dist\cropper.css" rel="stylesheet">
+<script src="\node_modules\cropper\node_modules\jquery\dist\jquery.js"></script>
+<script src="\node_modules\cropper\dist\cropper.js"></script>
+
+	
+
+
+</head>
+<body>
+
+
+
+  <img  id="image" src="picture.jpg">
+
+<span id="preview">
+</span>
+
+
+
+
+</body>
+
+<script type="text/javascript">
+
+
+
+function convertImageToCanvas(image) {
+	var canvas = document.createElement("canvas");
+	canvas.width = image.width;
+	canvas.height = image.height;
+	canvas.getContext("2d").drawImage(image, 0, 0);
+
+	return canvas;
+}
+
+
+
+
+
+	$('#image').cropper({
+
+viewMode:1,
+
+		preview:"#previe",
+
+
+		 autoCrop: false,
+  // aspectRatio: 16 / 9,
+  crop: function(e) {
+
+    // Output the result data for cropping image.
+    console.log(e.x);
+    console.log(e.y);
+    console.log(e.width);
+    console.log(e.height);
+    console.log(e.rotate);
+    console.log(e.scaleX);
+    console.log(e.scaleY);
+  }
+});
+
+	$('#btn').click(function(){
+var canvas = $('#image').cropper('getCroppedCanvas', {
+  width: 160,
+  height: 90
+});
+		console.log('I am clicked')
+// $('#preview')[0].append(canvas)
+
+
+
+// $('#image').cropper('replace' , 'pic.jpg');
+
+
+
+
+
+
+
+
+	});
+
+
+
+function EnterKey (image) {
+	$(document).keypress(function(e) {
+    if(e.which == 13) {
+      
+var canvas = $('#image').cropper('getCroppedCanvas', {
+  width: 160,
+  height: 90
+});
+		console.log('I am clicked')
+$('#preview')[0].append(canvas)
+$(image).cropper('clear')
+
+var elem_img =  $('#image')[0]
+var canvas = convertImageToCanvas( elem_img ) ;
+var image=  canvas.toDataURL();
+
+
+$('#image').cropper('replace' , image);
+
+      //Save The cropped Area and Transform And Reset
+
+    }
+});
+}
+
+function EscapeKey(image)
+{
+
+$(document).keyup(function(e) {
+     if (e.keyCode == 27) {
+     	$(image).cropper('clear')
+    }
+});
+
+}
+
+EscapeKey('#image');
+EnterKey('#image');
+
+
+</script>
+
+</html>
