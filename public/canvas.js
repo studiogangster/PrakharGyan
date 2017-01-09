@@ -10,6 +10,8 @@ function convertImageToCanvas(image) {
 
 
   $('#image').cropper({
+ // preview: '.preview',
+
 viewMode:1,
   crop: function(e) {
 
@@ -35,6 +37,45 @@ function backupImage(image)
 var canvas = convertImageToCanvas(_backupImage);
 var image= canvas.toDataURL();
 $('#image').cropper('replace' , image);
+}
+
+function drawImage()
+{
+  var elem_img =  _backupImage;
+var canvas = convertImageToCanvas( elem_img ) ;
+var ctx = canvas.getContext("2d");
+ctx.globalAlpha = 0.5;
+ctx.beginPath();
+
+var MissedExcluded = []
+
+for(i of SpaceRect)
+{
+
+if(i.include == true)
+{
+ctx.fillStyle = 'green';
+CropBoxData = i.coordinates;
+ctx.rect(CropBoxData.x, CropBoxData.y, CropBoxData.width  ,CropBoxData.height);
+
+}
+else if(i.include == false)
+{
+
+MissedExcluded.push(i)
+
+
+}
+
+
+
+}
+
+ctx.fill()
+var image= canvas.toDataURL();
+$('#image').cropper('replace' , image);
+
+
 }
 
 function blurRect(image , include)
@@ -128,14 +169,28 @@ var _image = new Image();
 _image.src = image;
 
 _backupImage = clone(_image);
+StackMoves = []
 SpaceRect = []
+
+}
+
+function SaveState()
+{
+
+
+        MainStack.push(SpaceRect);
 
 }
 
 function EnterKey(image) {
   $(document).keypress(function(e) {
     if(e.which == 13) {
+      SaveState();
       clearRect(image);
+
+
+
+
     }
 });
 }
@@ -173,17 +228,84 @@ $(document).keyup(function(e) {
 
 }
 
+
+function ControlZ(image)
+{
+ $(document).keydown(function(e) {
+        if (e.keyCode == 90 && e.ctrlKey) {
+            Undo();
+        }
+    });
+
+}
+function ControlR(image)
+{
+ $(document).keydown(function(e) {
+        if (e.keyCode == 82 && e.ctrlKey) {
+            Redo();
+        }
+    });
+
+}
+
+function BackspaceKey(image)
+{
+
+$(document).keyup(function(e) {
+     if (e.keyCode == 8) {
+      Undo();
+
+    }
+});
+
+}
+
+
 function initButtonSetup(image)
 {
 
 EscapeKey(image);
 EnterKey(image);
 SpaceKey(image);
+// BackspaceKey(image);
+ControlZ(image)
+ControlR(image)
 // DeleteKey(image);
 }
+
+function Undo()
+{
+  var tmp = SpaceRect.pop();
+  if(tmp)
+  {
+    
+    StackMoves.push(tmp);
+    drawImage();
+  }
+  
+}
+
+function Redo()
+{
+  var tmp = StackMoves.pop();
+
+  if(tmp)
+  {
+  SpaceRect.push(tmp);
+  drawImage();
+
+  }
+
+}
+
 
 initButtonSetup('#image');
 
 
 var StackMoves = []
 var SpaceRect = []
+
+
+//Main Data Stack
+
+var MainStack = []
