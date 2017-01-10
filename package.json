@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "dependencies": {
+    "bootstrap": "^3.3.7",
     "cropper": "^2.3.4",
     "pdf2img": "^0.2.0",
     "scissors": "^0.1.0"

@@ -1,0 +1,26 @@
+
+gs -sDEVICE=png16m -dTextAlphaBits=4 -r300 -o a.png a.pdf
+
+gs -sDEVICE=jpeg -dTextAlphaBits=4 -r300 -o a.jpg a.pdf
+
+
+gs -sDEVICE=pdfwrite    -o trimmedFile.pdf    -c "[/CropBox [89 231 491 545] PAGES pdfmark" -f in.PDF
+
+
+
+gs  -sDEVICE=pdfwrite   -o marked.pdf   -c "[/CropBox [54 54 1314 810] PAGES pdfmark"   -f in.PDF
+
+gs -o cropped.pdf -sDEVICE=pdfwrite -c "[/CropBox [24 72 559 794]"  -f in.PDF
+
+
+gs  -q -dBATCH -dNOPAUSE -sDEVICE=bbox -dLastPage=1 in.PDF| findstr %%BoundingBox
+
+ gs -dSAFER -dNOPAUSE -dBATCH -sDEVICE=bbox in.PDF
+
+ gsc -dSAFER -dNOPAUSE -dBATCH -sDEVICE=bbox in.PDF |  | find "ResBoundingBox"
+
+
+%%BoundingBox: 36 28 928 1428
+
+
+ gsc -o cropped.pdf -sDEVICE=pdfwrite -c "[/CropBox [36 28 50 50]" -c " /PAGES pdfmark" -f in.PDF

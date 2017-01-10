@@ -1,17 +1,17 @@
-var fs      = require('fs');
-var pdf2img = require('pdf2img');
+var scissors = require('scissors');
+ var fs = require('fs');
+// Use and chain any of these commands... 
+var pdf = scissors('in.pdf')
+   .pages(4, 5, 6, 1, 12) // select or reorder individual pages 
+   .range(1, 10) // pages 1-10 
+   .even() // select even pages 
+   .odd() // select odd pages 
+   .rotate(90) // 90, 180, 270, 360 
+   .compress()
+   .uncompress()
+   .crop(100, 100, 300, 200) // offset in points from left, bottom, right, top 
  
-var input   = __dirname + '/in.pdf';
+
+pdf.pngStream(300).pipe(fs.createWriteStream('picture.jpg')); // PNG of first page at 300 dpi 
+
  
-pdf2img.setOptions({
-  type: 'png',                      // png or jpeg, default png 
-  size: 1024,                       // default 1024 
-  density: 600,                     // default 600 
-  outputdir: __dirname + '/public', // mandatory, outputdir must be absolute path 
-  targetname: 'test'                // the prefix for the generated files, optional 
-});
- 
-pdf2img.convert(input, function(err, info) {
-  if (err) console.log(err)
-  else console.log(info);
-});

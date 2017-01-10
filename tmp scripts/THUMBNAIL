@@ -1,0 +1,20 @@
+THUMBNAIL
+
+gs -sDEVICE=jpeg -dTextAlphaBits=4 -r15 -o a.jpg in.PDF
+
+
+MEDIUM
+
+
+gs -sDEVICE=jpeg -dTextAlphaBits=4 -r90 -o a.jpg in.PDF
+
+
+
+HIGH
+
+
+gs -sDEVICE=jpeg -dTextAlphaBits=4 -r300 -o a.jpg in.PDF
+
+
+
+gsc -sDEVICE=jpeg -dTextAlphaBits=4 -r15 -o public\images\page_%03d.jpg in.pdf
