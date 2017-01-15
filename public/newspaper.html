@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Canvas</title>
+
+
+<style type="text/css">
+
+
+/*
+#image {
+max-width: 100%;
+  max-height: 90px; 
+
+  height: 90px;
+
+}*/
+
+body, html {
+  margin: 0;
+  overflow: hidden;
+  height:100%;
+}
+
+@media (min-width: 768px){
+  #left {
+    position: absolute;
+    top: 0px;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+  }
+  
+  #right {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    width: 100%;
+  }
+
+  #right-nav{
+height: 00px;
+
+  }
+
+  #right-top{
+  	width: 100%;
+  	height: calc(70% - 0px);
+  	overflow-y: scroll;
+  }
+
+  #right-bottom{
+  	padding: 9px;
+
+  	height: 30%;
+ 
+  }
+
+ #left-bottom{
+  	width: 100%;
+  	height: calc(100% - 50px)
+
+  }
+
+  #left-nav{
+  	width: 100%;
+  	max-height: 50px;
+ 
+  }
+
+}
+
+
+#left {
+  background-color: #000000;
+  text-align: center;
+  height:100%;
+}
+
+#right {
+  height:100%;
+  background-color: #000000;
+  text-align: center;
+}
+
+
+
+ html, body {
+        height: 100%;
+        margin: 0px;
+    }
+    .container-fluid {
+    	max-height: 100%;
+        height: 100%;
+        background: #000000;
+    }
+
+img {
+  max-width: 100%;
+
+}
+
+#card
+{
+margin: 8px;
+
+}
+
+.slide
+{
+
+	height: 100%;
+}
+
+.navbar
+{
+width: 100%;
+height: 50px;
+
+}
+
+.modal-dialog {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.modal-content {
+  height: auto;
+  min-height: 100%;
+  border-radius: 0;
+}
+
+
+</style>
+<script src="https://code.jquery.com/jquery-3.1.1.slim.min.js" integrity="sha384-A7FZj7v+d/sdmMqp/nOQwliLvUsJfDHW+k9Omg/a/EheAdgtzNs3hpfag6Ed950n" crossorigin="anonymous"></script>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css" integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js" integrity="sha384-DztdAPBWPRXSA/3eYEEUWrWCy7G5KFbe8fFjk5JAIxUYHKkDx6Qin1DkWx51bBrb" crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js" integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn" crossorigin="anonymous"></script>
+
+<link  href="\node_modules\cropper\dist\cropper.css" rel="stylesheet">
+
+<script src="\node_modules\cropper\dist\cropper.js"></script>
+
+  
+
+
+
+</head>
+<body>
+
+
+
+
+
+
+
+<div class="container-fluid">
+
+
+
+<div class="row">
+z
+ <div class="col-10" id="left">
+ <div id="left-nav">
+
+
+	
+<nav class="navbar navbar-toggleable-md navbar-light bg-faded">
+  <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+  <a class="navbar-brand" href="#">Prakhar Gyan</a>
+
+  <div class="collapse navbar-collapse" id="navbarSupportedContent">
+    <ul class="navbar-nav mr-auto">
+      <li class="nav-item active">
+        <a class="nav-link" href="#">Home <span class="sr-only">(current)</span></a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="#">Link</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link disabled" href="#">Disabled</a>
+      </li>
+    </ul>
+    <form class="form-inline my-2 my-lg-0">
+     
+      <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Publish</button>
+    </form>
+  </div>
+</nav>
+</div>
+ <div id="left-bottom">
+
+
+<img src="pic.jpg" data-toggle="modal" data-target="#saveNewsClip" usemap="#planetmap">
+
+<map name="planetmap">
+  <area shape="rect" coords="0,0,82,126" href="javascript:alert(65465)" alt="Sun">
+  <area shape="circle" coords="90,58,3" href="mercur.htm" alt="Mercury">
+  <area shape="circle" coords="124,58,8" href="venus.htm" alt="Venus">
+</map>
+
+
+
+</div>
+
+  </div>   
+
+  <div class="col-2" id="right">
+
+
+
+
+
+</div>
+
+
+
+
+
+<!-- MODALS -->
+
+
+<!-- Sve News With Name -->
+
+<div class="modal fade" id="saveNewsClip" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      
+      <div class="modal-body">
+     
+
+
+  <div class="modal-body">
+
+
+      <img src="pic.jpg" >
+      </div>
+
+
+      </div>
+    
+    </div>
+  </div>
+</div>
+
+
+
+<!-- !MODELS -->
+
+
+</body>
+
+
+<script type="text/javascript" src="canvas.js"></script>
+<script type="text/javascript">
+
+
+
+</script>
+
+</html>

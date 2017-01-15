@@ -1,0 +1,17 @@
+Steps to cut out images at backend
+
+Script:
+Get Main Coordinates of BigPicture
+Create a tempPicture with same dimmension
+Get Array of rectangles from frontend
+Cut rectangles on TempPicture with alpha
+XOR With original Image
+Crop Out Access Transparency
+
+
+
+
+#Script
+
+
+identify -format "%[fx:w] by %[fx:h]" draw_rect.png 

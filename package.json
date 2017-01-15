@@ -4,8 +4,10 @@
   "description": "",
   "main": "index.js",
   "dependencies": {
+    "aws-sdk": "^2.7.21",
     "cropper": "^2.3.4",
     "pdf2img": "^0.2.0",
+    "s3": "^4.4.0",
     "scissors": "^0.1.0"
   },
   "devDependencies": {},

@@ -1,3 +1,125 @@
+function startCanvasEditor()
+{
+    $('#image').cropper({
+ // preview: '.preview',
+
+viewMode:1,
+  crop: function(e) {
+
+
+  }
+});
+
+var KeyState = true;
+
+
+
+        $('#saveNewsClip').on('shown.bs.modal', function () {
+
+          var index= CroppedArticles.length;
+
+if(index>0)
+$('#previewCroppedArticle')[0].src=  localStorage.getItem(  CroppedArticles[index-1] );
+
+
+          KeyState = false;
+    $('#article_name').focus();
+})
+                $('#saveNewsClip').on('hidden.bs.modal', function () {
+
+KeyState = true;
+
+})
+
+
+
+var _backupImage = clone('#image')
+
+
+
+initButtonSetup('#image');
+
+
+var StackMoves = []
+var SpaceRect = []
+
+
+//Main Data Stack
+
+var MainStack = []
+
+
+//Cropped Artcle Stack
+
+var CroppedArticles = []
+
+
+
+function changeCoverImage(id)
+{
+console.log('changeCover')
+
+
+var _image = localStorage.getItem(id)
+
+
+
+
+$('#image').cropper('replace' , _image);
+var image = new Image();
+image.src =  _image;
+
+_backupImage = clone(image);
+StackMoves = []
+SpaceRect = []
+
+
+
+}
+
+
+function createArticleCard(name, img , id)
+{
+
+var img = document.createElement('img')
+
+img.setAttribute('class','card-img-center');
+
+
+
+img.setAttribute('src' ,localStorage.getItem(id) );
+
+img.setAttribute('alt' , name);
+
+
+
+
+
+var card = document.createElement('div')
+
+card.setAttribute('id' , 'card' )
+
+card.setAttribute('class' , 'card')
+
+var a = document.createElement('a')
+
+a.setAttribute('class' , 'btn btn-primary')
+
+
+
+a.setAttribute('onclick' , 'changeCoverImage('+"'" + id +"'"+ ')')
+
+
+a.innerText = name
+
+card.appendChild(img)
+card.appendChild(a)
+
+
+$('#right-top').append(card)
+}
+
+
 function convertImageToCanvas(image) {
   var canvas = document.createElement("canvas");
   canvas.width = image.width;
@@ -9,18 +131,7 @@ function convertImageToCanvas(image) {
 
 
 
-  $('#image').cropper({
- // preview: '.preview',
 
-viewMode:1,
-  crop: function(e) {
-
-
-  }
-});
-
-
-var _backupImage = clone('#image')
 
 
 function clone(image)
@@ -102,8 +213,13 @@ ctx.beginPath();
 
 var MissedExcluded = []
 
+clipboard = '"'
 for(i of SpaceRect)
 {
+
+
+  clipboard+='' + Math.round(CropBoxData.x) + "," + Math.round(CropBoxData.y)+":"+Math.round(CropBoxData.x+CropBoxData.width)+','+Math.round(CropBoxData.y+CropBoxData.height)+' '
+
 
 if(i.include == true)
 {
@@ -124,6 +240,8 @@ MissedExcluded.push(i)
 
 }
 
+clipboard+='"'
+console.log(clipboard);
 
 ctx.fill()
 ctx.beginPath();
@@ -144,26 +262,150 @@ $('#image').cropper('replace' , image);
 }
 
 
+function copyToNewCanvasResetCrop(ctxOld , ctxNew, CropBoxData)
+{
+var imgData=ctxOld.getImageData( CropBoxData.x, CropBoxData.y, CropBoxData.width  ,CropBoxData.height );
+ctxNew.putImageData(imgData , 0 , 0 );
+
+
+
+}
+
+
+function copyToNewCanvas(ctxOld , ctxNew, CropBoxData)
+{
+var imgData=ctxOld.getImageData( CropBoxData.x, CropBoxData.y, CropBoxData.width  ,CropBoxData.height );
+ctxNew.putImageData(imgData , CropBoxData.x , CropBoxData.y);
+
+
+
+}
+
 
 function clearRect(image)
 {
-var elem_img =  $('#image')[0]
+var elem_img =  _backupImage;
 var canvas = convertImageToCanvas( elem_img ) ;
 var ctx = canvas.getContext("2d");
 ctx.fillStyle = 'rgba(255, 0, 0, 1)';
 
+var newCanvas=canvas.cloneNode();
+
+canvas.clone
+
+console.log(canvas.width)
+console.log(canvas.height)
+
+newCanvas.width = canvas.width
+newCanvas.height = canvas.height
+
+
+var _ctx=newCanvas.getContext("2d");
+
+var _default = true;
+var Left = 0;
+var Right = 0;
+var Top = 0;
+var Bottom = 0;
+
 for(i of SpaceRect)
 {
+  CropBoxData = i.coordinates;
+
+if(_default)
+{
+_default = false;
+Left = CropBoxData.x;
+Right = CropBoxData.width + Left;
+Top = CropBoxData.y;
+Bottom = CropBoxData.height + Top
+
+}
+else
+{
+
+if(Left > CropBoxData.x)
+  Left = CropBoxData.x;
 
 
+if(Right < CropBoxData.width + CropBoxData.x)
+  Right = CropBoxData.width + CropBoxData.x;
+
+
+if(Top > CropBoxData.y)
+  Top = CropBoxData.y;
+
+
+if(Bottom < CropBoxData.height + CropBoxData.y)
+  Bottom = CropBoxData.height + CropBoxData.y;
+
+
+
+}
+
+
+copyToNewCanvas(ctx, _ctx , CropBoxData)
+
+
+}
+
+
+var _CropBoxData = {};
+_CropBoxData.x = Left;
+_CropBoxData.y = Top;
+_CropBoxData.width = Right - Left;
+_CropBoxData.height = Bottom - Top;
+
+
+var _newCanvas = document.createElement('canvas')
+
+_newCanvas.width = _CropBoxData.width;
+_newCanvas.height = _CropBoxData.height;
+
+var __ctx=_newCanvas.getContext("2d");
+
+
+
+copyToNewCanvasResetCrop(_ctx , __ctx , _CropBoxData );
+
+
+
+
+for(i of SpaceRect)
+{
 CropBoxData = i.coordinates;
+
+
+
+
 ctx.clearRect(CropBoxData.x, CropBoxData.y, CropBoxData.width  ,CropBoxData.height);
 
 
 }
 
 
+
+
+
+
+
 var image= canvas.toDataURL();
+
+var TimeStamp = Date.now();
+
+var name_article ='CroppedArticle_'+TimeStamp 
+
+CroppedArticles.push( name_article  );
+
+
+localStorage.setItem( name_article , _newCanvas.toDataURL() );
+
+
+
+
+createArticleCard('added' ,name_article , name_article);
+
+
 $('#image').cropper('replace' , image);
 var _image = new Image();
 _image.src = image;
@@ -182,19 +424,21 @@ function SaveState()
 
 }
 
-var KeyState = true;
 
 
 
-        $('#saveNewsClip').on('shown.bs.modal', function () {
-          KeyState = false;
-    $('#article_name').focus();
-})
-                $('#saveNewsClip').on('hidden.bs.modal', function () {
+function saveArtcleCropped()
+{
 
-KeyState = true;
 
-})
+        $('#saveNewsClip').modal('show');
+
+
+
+
+
+}
+
 
 
 function EnterKey(image) {
@@ -202,14 +446,14 @@ function EnterKey(image) {
     if(e.which == 13 && KeyState) {
 
 
-        $('#saveNewsClip').modal('show');
+  
 
 
 
       SaveState();
       clearRect(image);
 
-      
+           saveArtcleCropped();
       
 
 
@@ -230,23 +474,18 @@ function SpaceKey (image) {
 
 
 
- console.log(tmp)
 
-      // blurRect(image , true);
+
+      blurRect(image , true);
       //Save The cropped Area and Transform And Reset
 
-setTimeout( function(){
-
-$('#image').cropper('setData' , tmp );
-
-} , 2000)
 
 
 
 
 
 
- console.log(tmp)
+
 
     }
 });
@@ -346,13 +585,15 @@ function Redo()
 }
 
 
-initButtonSetup('#image');
+
+}
+
+Person.prototype.nationality = function()
+{
 
 
-var StackMoves = []
-var SpaceRect = []
+  
+}
 
 
-//Main Data Stack
-
-var MainStack = []
+var initCanvas = startCanvasEditor();
