@@ -1,21 +1,32 @@
+var FilePath  = "pic.jpg"
+
 var AWS = require('aws-sdk');
 var fs = require('fs')
+
+
      //aws credentials
-     AWS.config = new AWS.Config();
-     AWS.config.accessKeyId = "AKIAIDUUQC2BCV4QCV5A";
-     AWS.config.secretAccessKey = "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";
-     AWS.config.region = "ap-southeast-1";
-     AWS.config.apiVersions = {
-        "s3": "2006-03-01"
-     }
+var albumBucketName = 'prakhargyan';
+var bucketRegion = 'us-west-2';
+var IdentityPoolId = 'us-west-2:a27fe5b3-7d29-458b-a789-21ebf22afd94';
+
+AWS.config.update({
+  region: bucketRegion,
+  credentials: new AWS.CognitoIdentityCredentials({
+    IdentityPoolId: IdentityPoolId
+  })
+});
 
     var s3 = new AWS.S3({signatureVersion: 'v4'});
 
-    var bodystream = fs.createReadStream("pic.jpg");
+
+
+function upload(inpFilePath , outCloudPath , name)
+{
+    var bodystream = fs.createReadStream(inpFilePath);
 
     var params = {
         'Bucket': 'prakhargyan',
-        'Key': 'uploads/images/' + "test.jpg",
+        'Key':outCloudPath + name,
         'Body': bodystream,
         'ContentEncoding': 'base64', 
         'ContentType ': 'image/jpeg'
@@ -23,5 +34,20 @@ var fs = require('fs')
 
      //also tried with s3.putObject
      s3.upload(params, function(err, data){
-        console.log('after s3 upload====', err, data);
+
+if(err)
+{
+  console.log('S3 Upload Error : ', err);
+}
+else
+{
+
+     console.log('S3 Upload Success : ',data);
+}
+
+       
      }) 
+
+ }
+
+ upload(FilePath , 'upload/testUplaod/' , FilePath);
