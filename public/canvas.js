@@ -588,12 +588,7 @@ function Redo()
 
 }
 
-Person.prototype.nationality = function()
-{
 
-
-  
-}
 
 
 var initCanvas = startCanvasEditor();
