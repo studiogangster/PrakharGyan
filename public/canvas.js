@@ -1,3 +1,88 @@
+/**
+ * IndexedDB Helper for storing images and metadata
+ */
+const DB_NAME = 'CanvasImagesDB';
+const STORE_NAME = 'images';
+const DB_VERSION = 1;
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
+    request.onupgradeneeded = function (event) {
+      const db = event.target.result;
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+      }
+    };
+    request.onsuccess = function (event) {
+      resolve(event.target.result);
+    };
+    request.onerror = function (event) {
+      reject(event.target.error);
+    };
+  });
+}
+
+function saveImageWithMetadata(id, imageBlob, metadata = {}) {
+  return openDB().then(db => {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      const store = tx.objectStore(STORE_NAME);
+      const obj = { id, image: imageBlob, metadata };
+      const req = store.put(obj);
+      req.onsuccess = () => resolve();
+      req.onerror = e => reject(e);
+    });
+  });
+}
+
+function getImageWithMetadata(id) {
+  return openDB().then(db => {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, 'readonly');
+      const store = tx.objectStore(STORE_NAME);
+      const req = store.get(id);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = e => reject(e);
+    });
+  });
+}
+
+function getAllImagesWithMetadata() {
+  return openDB().then(db => {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, 'readonly');
+      const store = tx.objectStore(STORE_NAME);
+      const req = store.getAll();
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = e => reject(e);
+    });
+  });
+}
+
+// Utility: Convert dataURL to Blob
+function dataURLToBlob(dataURL) {
+  const arr = dataURL.split(',');
+  const mime = arr[0].match(/:(.*?);/)[1];
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+  return new Blob([u8arr], { type: mime });
+}
+
+// Utility: Convert Blob to dataURL (async)
+function blobToDataURL(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
 function startCanvasEditor()
 {
     $('#image').cropper({
@@ -6,7 +91,23 @@ function startCanvasEditor()
 viewMode:1,
   crop: function(e) {
 
+  },
+  zoom: function(event) {
+    var cropper = $(this).data('cropper');
+    var canvasData = cropper.getCanvasData();
+    var containerData = cropper.getContainerData();
 
+    // Calculate center positions
+    var centerX = containerData.width / 2;
+    var centerY = containerData.height / 2;
+
+    // Set canvas data so image center aligns with container center
+    cropper.setCanvasData({
+      left: centerX - canvasData.width / 2,
+      top: centerY - canvasData.height / 2,
+      width: canvasData.width,
+      height: canvasData.height
+    });
   }
 });
 
@@ -14,17 +115,27 @@ var KeyState = true;
 
 
 
-        $('#saveNewsClip').on('shown.bs.modal', function () {
+        $('#saveNewsClip').on('shown.bs.modal', async function () {
+          var index = CroppedArticles.length;
 
-          var index= CroppedArticles.length;
-
-if(index>0)
-$('#previewCroppedArticle')[0].src=  localStorage.getItem(  CroppedArticles[index-1] );
-
+          if (index > 0) {
+            try {
+              const record = await getImageWithMetadata(CroppedArticles[index - 1]);
+              if (record && record.image) {
+                const dataURL = await blobToDataURL(record.image);
+                $('#previewCroppedArticle')[0].src = dataURL;
+              } else {
+                $('#previewCroppedArticle')[0].src = '';
+              }
+            } catch (err) {
+              $('#previewCroppedArticle')[0].src = '';
+              console.error('Failed to load preview image from IndexedDB:', err);
+            }
+          }
 
           KeyState = false;
-    $('#article_name').focus();
-})
+          $('#article_name').focus();
+        })
                 $('#saveNewsClip').on('hidden.bs.modal', function () {
 
 KeyState = true;
@@ -55,68 +166,64 @@ var CroppedArticles = []
 
 
 
-function changeCoverImage(id)
+async function changeCoverImage(id)
 {
-console.log('changeCover')
+  console.log('changeCover');
 
+  try {
+    const record = await getImageWithMetadata(id);
+    if (!record || !record.image) {
+      console.warn('No image found in IndexedDB for id:', id);
+      return;
+    }
+    const _imageDataURL = await blobToDataURL(record.image);
 
-var _image = localStorage.getItem(id)
+    $('#image').cropper('replace', _imageDataURL);
+    var image = new Image();
+    image.src = _imageDataURL;
 
-
-
-
-$('#image').cropper('replace' , _image);
-var image = new Image();
-image.src =  _image;
-
-_backupImage = clone(image);
-StackMoves = []
-SpaceRect = []
-
-
-
+    _backupImage = clone(image);
+    StackMoves = [];
+    SpaceRect = [];
+  } catch (err) {
+    console.error('Failed to load image from IndexedDB:', err);
+  }
 }
 
 
-function createArticleCard(name, img , id)
+async function createArticleCard(name, img, id)
 {
+  var imgElem = document.createElement('img');
+  imgElem.setAttribute('class', 'card-img-center');
 
-var img = document.createElement('img')
+  try {
+    const record = await getImageWithMetadata(id);
+    if (record && record.image) {
+      const dataURL = await blobToDataURL(record.image);
+      imgElem.setAttribute('src', dataURL);
+    } else {
+      imgElem.setAttribute('alt', 'Image not found');
+    }
+  } catch (err) {
+    imgElem.setAttribute('alt', 'Error loading image');
+    console.error('Failed to load image for card:', err);
+  }
 
-img.setAttribute('class','card-img-center');
+  imgElem.setAttribute('alt', name);
 
+  var card = document.createElement('div');
+  card.setAttribute('id', 'card');
+  card.setAttribute('class', 'card');
 
+  var a = document.createElement('a');
+  a.setAttribute('class', 'btn btn-primary');
+  a.setAttribute('onclick', 'changeCoverImage(' + "'" + id + "'" + ')');
+  a.innerText = name;
 
-img.setAttribute('src' ,localStorage.getItem(id) );
+  card.appendChild(imgElem);
+  card.appendChild(a);
 
-img.setAttribute('alt' , name);
-
-
-
-
-
-var card = document.createElement('div')
-
-card.setAttribute('id' , 'card' )
-
-card.setAttribute('class' , 'card')
-
-var a = document.createElement('a')
-
-a.setAttribute('class' , 'btn btn-primary')
-
-
-
-a.setAttribute('onclick' , 'changeCoverImage('+"'" + id +"'"+ ')')
-
-
-a.innerText = name
-
-card.appendChild(img)
-card.appendChild(a)
-
-
-$('#right-top').append(card)
+  $('#right-top').append(card);
 }
 
 
@@ -279,6 +386,7 @@ ctxNew.putImageData(imgData , CropBoxData.x , CropBoxData.y);
 
 
 
+
 }
 
 
@@ -389,30 +497,38 @@ ctx.clearRect(CropBoxData.x, CropBoxData.y, CropBoxData.width  ,CropBoxData.heig
 
 
 
-var image= canvas.toDataURL();
+var image = canvas.toDataURL();
 
 var TimeStamp = Date.now();
 
-var name_article ='CroppedArticle_'+TimeStamp 
+var name_article = 'CroppedArticle_' + TimeStamp;
 
-CroppedArticles.push( name_article  );
+CroppedArticles.push(name_article);
 
+// Convert to Blob and save to IndexedDB with optional metadata
+var articleMeta = {
+  created: TimeStamp,
+  boundingBoxes:  SpaceRect
+  // Add more metadata fields as needed, e.g. title, tags, etc.
+};
+var newCanvasDataURL = _newCanvas.toDataURL();
+var newCanvasBlob = dataURLToBlob(newCanvasDataURL);
 
-localStorage.setItem( name_article , _newCanvas.toDataURL() );
+saveImageWithMetadata(name_article, newCanvasBlob, articleMeta)
+  .then(() => {
+    createArticleCard('added', name_article, name_article);
+  })
+  .catch((err) => {
+    console.error('Failed to save image to IndexedDB:', err);
+  });
 
-
-
-
-createArticleCard('added' ,name_article , name_article);
-
-
-$('#image').cropper('replace' , image);
+$('#image').cropper('replace', image);
 var _image = new Image();
 _image.src = image;
 
 _backupImage = clone(_image);
-StackMoves = []
-SpaceRect = []
+StackMoves = [];
+SpaceRect = [];
 
 }
 
@@ -451,9 +567,10 @@ function EnterKey(image) {
 
 
       SaveState();
+      console.log('MainStack', MainStack)
       clearRect(image);
 
-           saveArtcleCropped();
+      saveArtcleCropped();
       
 
 
@@ -592,3 +709,37 @@ function Redo()
 
 
 var initCanvas = startCanvasEditor();
+
+// Footer toolbar: Center Image button logic
+$('#centerImageBtn').on('click', function() {
+  var cropper = $('#image').data('cropper');
+  if (!cropper) return;
+  // Clear any crop box/selections
+  cropper.clear();
+  // Reset image: fits image to screen, resets zoom/pan, and removes all transformations
+  cropper.reset();
+});
+
+// Footer toolbar: Toggle Cropper button logic
+$('#toggleCropperBtn').on('click', function() {
+  var cropper = $('#image').data('cropper');
+  if (!cropper) return;
+  if (cropper.enabled) {
+    cropper.disable();
+    // Optionally, visually indicate disabled state
+    $('#toggleCropperBtn').addClass('disabled');
+  } else {
+    cropper.enable();
+    $('#toggleCropperBtn').removeClass('disabled');
+  }
+});
+
+// Initialize button state on load
+$(document).ready(function() {
+  var cropper = $('#image').data('cropper');
+  if (cropper && !cropper.enabled) {
+    $('#toggleCropperBtn').removeClass('disabled');
+  } else {
+    $('#toggleCropperBtn').addClass('disabled');
+  }
+});

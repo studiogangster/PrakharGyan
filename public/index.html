@@ -156,31 +156,7 @@ z
  <div id="left-nav">
 
 
-	
-<nav class="navbar navbar-toggleable-md navbar-light bg-faded">
-  <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-    <span class="navbar-toggler-icon"></span>
-  </button>
-  <a class="navbar-brand" href="#">Prakhar Gyan</a>
-
-  <div class="collapse navbar-collapse" id="navbarSupportedContent">
-    <ul class="navbar-nav mr-auto">
-      <li class="nav-item active">
-        <a class="nav-link" href="#">Home <span class="sr-only">(current)</span></a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" href="#">Link</a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link disabled" href="#">Disabled</a>
-      </li>
-    </ul>
-    <form class="form-inline my-2 my-lg-0">
-     
-      <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Publish</button>
-    </form>
-  </div>
-</nav>
+ 
 </div>
  <div id="left-bottom">
 
@@ -300,6 +276,31 @@ z
 <!-- !MODELS -->
 
 
+  <!-- Footer Toolbar Menu -->
+  <footer style="position:fixed;bottom:0;width:100%;background:#222;padding:8px 0;z-index:1000;">
+    <div class="container-fluid d-flex justify-content-center align-items-center">
+      <div class="btn-group" role="group" aria-label="Toolbar">
+        <button id="centerImageBtn" type="button" class="btn btn-light mx-2" title="Center Image">
+          <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-crosshair" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="2" x2="12" y2="6"/>
+            <line x1="12" y1="18" x2="12" y2="22"/>
+            <line x1="2" y1="12" x2="6" y2="12"/>
+            <line x1="18" y1="12" x2="22" y2="12"/>
+          </svg>
+        </button>
+        <button id="toggleCropperBtn" type="button" class="btn btn-light mx-2" title="Toggle Cropper">
+          <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-scissors" viewBox="0 0 24 24">
+            <circle cx="6" cy="6" r="3"/>
+            <circle cx="18" cy="6" r="3"/>
+            <path d="M20 19c-1.5-1.5-4.5-1.5-6 0s-4.5 1.5-6 0"/>
+            <line x1="8" y1="8" x2="16" y2="16"/>
+          </svg>
+        </button>
+        <!-- Add more toolbar buttons here as needed -->
+      </div>
+    </div>
+  </footer>
 </body>
 
 
