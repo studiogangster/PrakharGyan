@@ -868,7 +868,6 @@ if (bbox) {
 
 
 
-var initCanvas = startCanvasEditor();
 
 // Footer toolbar: Center Image button logic
 $('#centerImageBtn').on('click', function () {

@@ -5,7 +5,7 @@
 
 <style type="text/css">
 
-<style type="text/css">
+
 
 
 /*
@@ -168,7 +168,7 @@ height: 50px;
   </div>   
 
   <div class="col-8">
-<img src="pic.jpg" id="image">
+<img id="image">
     
   </div>
   <div class="col-2" id="right">
@@ -310,4 +310,14 @@ height: 50px;
 <script type="text/javascript" src="canvas.js"></script>
 <script type="text/javascript" src="file_explorer.js"></script>
 <script type="text/javascript" src="initAjax.js"></script>
+
+<script type="text/javascript">
+  
+function startCropping(){
+  $('#image').attr('src', 'pic.jpg');
+  startCanvasEditor();
+}
+
+
+</script>
 </html>

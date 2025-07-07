@@ -48,13 +48,14 @@ def run_watcher_in_thread():
 
 
 
+from contextlib import asynccontextmanager
 
-app = FastAPI()
-
-# Start the background watcher on startup
-@app.on_event("startup")
-def startup_event():
+@asynccontextmanager
+async def lifespan(app):
     run_watcher_in_thread()
+    yield
+
+app = FastAPI(lifespan=lifespan)
 
 # Mount the public directory at the root `/`
 

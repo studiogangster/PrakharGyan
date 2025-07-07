@@ -33,6 +33,11 @@ function createFileNode(name, fullPath, depth = 0) {
   file.style.marginLeft = `${depth * 16}px`;
   file.innerHTML = `<span>📄 ${name}</span>`;
   file.dataset.fullPath = fullPath;
+  file.onclick = ()=>{
+    console.log('click', fullPath);
+    startCropping(fullPath)
+
+  }
   // Optionally, add click handler for file preview
   return file;
 }
