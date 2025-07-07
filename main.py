@@ -42,20 +42,30 @@ def flatten_pdf_pages(input_path, output_base_path, input_root="./"):
     for page_number in range(len(doc)):
         single_page_pdf = fitz.open()
         single_page_pdf.insert_pdf(doc, from_page=page_number, to_page=page_number)
-        output_path = os.path.join(
+        pdf_output_path = os.path.join(
             output_dir,
             f"{input_filename}_page_{page_number + 1}.pdf"
         )
-        single_page_pdf.save(output_path)
+        single_page_pdf.save(pdf_output_path)
         single_page_pdf.close()
 
+        # Generate JPEG for this page
+        page = doc.load_page(page_number)
+        # Render at 120 DPI (scaling factor ~1.25), adjust as needed
+        zoom = 120 / 72
+        mat = fitz.Matrix(zoom, zoom)
+        pix = page.get_pixmap(matrix=mat, alpha=False)
+        img_output_path = os.path.splitext(pdf_output_path)[0] + ".jpg"
+        pix.save(img_output_path, "jpeg")
+        # Optionally, for PNG: pix.save(..., "png")
+
     doc.close()
-    print(f"Saved pages to: {output_dir}")
+    print(f"Saved pages and images to: {output_dir}")
 
 
 
 
-flatten_pdf_pages("pdf_storage/test/Upgrade form.pdf", "test/pdf/out/", "pdf_storage")
+# flatten_pdf_pages("pdf_storage/test/Upgrade form.pdf", f"{OUTPUT_GEN_IMAGE_DIR}/alpha-test/", "pdf_storage")
 
 import threading
 
@@ -92,7 +102,7 @@ class ChangeHandler(FileSystemEventHandler):
             last_size = size
             time.sleep(poll_interval)
 
-        flatten_pdf_pages(filepath, "test/pdf/out/", WATCH_DIR)
+        flatten_pdf_pages(filepath, f"{OUTPUT_GEN_IMAGE_DIR}/alpha-test", WATCH_DIR)
         
 
 
