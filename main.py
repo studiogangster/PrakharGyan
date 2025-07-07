@@ -4,7 +4,7 @@ from fastapi import Query
 from fastapi.responses import JSONResponse
 import os
 
-import fitz  # PyMuPDF
+import fitz 
 
 import threading
 import time
@@ -22,9 +22,32 @@ except ImportError:
 WATCH_DIR = "pdf_storage"  # Directory to monitor
 OUTPUT_GEN_IMAGE_DIR = "pdf_image_storage"  # Directory to monitor
 
+
+def flatten_pdf_pages(input_path, output_dir):
+    os.makedirs(output_dir, exist_ok=True)  # Handles nested folders
+
+    doc = fitz.open(input_path)
+
+    for page_number in range(len(doc)):
+        single_page_pdf = fitz.open()
+        single_page_pdf.insert_pdf(doc, from_page=page_number, to_page=page_number)
+
+        output_path = os.path.join(output_dir, f"page_{page_number + 1}.pdf")
+        single_page_pdf.save(output_path)
+        single_page_pdf.close()
+
+    doc.close()
+    print(f"Saved {len(doc)} pages to: {output_dir}")
+    
+
+
+
 class ChangeHandler(FileSystemEventHandler):
     def on_any_event(self, event):
         print(f"[WATCHDOG] {event.event_type}: {event.src_path}")
+
+
+
 
 def start_watcher():
     if Observer is None:
