@@ -43,9 +43,15 @@ Prakhar Gyan is a web application for cropping, editing, and saving regions of i
 ## Basic Usage
 
 1. **Start the Server**
+
+   This project now uses [uv](https://github.com/astral-sh/uv) and [Uvicorn](https://www.uvicorn.org/) to run the FastAPI backend.
+
+   If you don't have `uv` installed, follow the instructions at [https://github.com/astral-sh/uv](https://github.com/astral-sh/uv).
+
    ```bash
-   node index.js
+   uv run uvicorn main:app --reload --port 3000
    ```
+
    Open your browser and navigate to [http://localhost:3000](http://localhost:3000).
 
 2. **Image Editing**
