@@ -23,28 +23,77 @@ WATCH_DIR = "pdf_storage"  # Directory to monitor
 OUTPUT_GEN_IMAGE_DIR = "pdf_image_storage"  # Directory to monitor
 
 
-def flatten_pdf_pages(input_path, output_dir):
-    os.makedirs(output_dir, exist_ok=True)  # Handles nested folders
+def flatten_pdf_pages(input_path, output_base_path, input_root="./"):
+    """
+    Splits a PDF into single-page PDFs.
+    - input_path: full path to input PDF
+    - output_base_path: root directory for outputs
+    - input_root: root directory for input PDFs (for relative path calculation)
+    Output structure: output_base_path/<relative_path_of_input>/<input_filename>_page_{n}.pdf
+    """
+    # Compute relative path of input PDF to input_root
+    rel_dir = os.path.dirname(os.path.relpath(input_path, input_root))
+    input_filename = os.path.splitext(os.path.basename(input_path))[0]
+    output_dir = os.path.join(output_base_path, rel_dir)
+    os.makedirs(output_dir, exist_ok=True)
 
     doc = fitz.open(input_path)
 
     for page_number in range(len(doc)):
         single_page_pdf = fitz.open()
         single_page_pdf.insert_pdf(doc, from_page=page_number, to_page=page_number)
-
-        output_path = os.path.join(output_dir, f"page_{page_number + 1}.pdf")
+        output_path = os.path.join(
+            output_dir,
+            f"{input_filename}_page_{page_number + 1}.pdf"
+        )
         single_page_pdf.save(output_path)
         single_page_pdf.close()
 
     doc.close()
-    print(f"Saved {len(doc)} pages to: {output_dir}")
-    
+    print(f"Saved pages to: {output_dir}")
 
 
+
+
+flatten_pdf_pages("pdf_storage/test/Upgrade form.pdf", "test/pdf/out/", "pdf_storage")
+
+import threading
 
 class ChangeHandler(FileSystemEventHandler):
-    def on_any_event(self, event):
-        print(f"[WATCHDOG] {event.event_type}: {event.src_path}")
+    def on_created(self, event):
+        # Only process .pdf files
+        if not event.is_directory and event.src_path.lower().endswith(".pdf"):
+            print(f"[WATCHDOG] Detected new PDF: {event.src_path}")
+            threading.Thread(target=self._wait_for_complete, args=(event.src_path,), daemon=True).start()
+
+    def _wait_for_complete(self, filepath, stable_time=2.0, poll_interval=0.5):
+        """
+        Wait until the file size is stable for 'stable_time' seconds.
+        """
+        import time
+        last_size = -1
+        stable_since = None
+        while True:
+            try:
+                size = os.path.getsize(filepath)
+            except Exception:
+                size = -1
+            now = time.time()
+            if size == last_size and size > 0:
+                if stable_since is None:
+                    stable_since = now
+                elif now - stable_since >= stable_time:
+                    print(f"[WATCHDOG] PDF is fully written: {filepath}")
+
+                    # Place processing logic here (e.g., call flatten_pdf_pages)
+                    break
+            else:
+                stable_since = None
+            last_size = size
+            time.sleep(poll_interval)
+
+        flatten_pdf_pages(filepath, "test/pdf/out/", WATCH_DIR)
+        
 
 
 
@@ -53,11 +102,34 @@ def start_watcher():
     if Observer is None:
         print("Watchdog not installed, skipping directory monitoring.", file=sys.stderr)
         return
+
     event_handler = ChangeHandler()
+    processed_files = set()
+
+    # Initial scan for all .pdf files
+    for root, dirs, files in os.walk(WATCH_DIR):
+        for fname in files:
+            if fname.lower().endswith(".pdf"):
+                fpath = os.path.join(root, fname)
+                processed_files.add(os.path.abspath(fpath))
+                print(f"[WATCHDOG] Initial scan: found PDF {fpath}")
+                threading.Thread(target=event_handler._wait_for_complete, args=(fpath,), daemon=True).start()
+
     observer = Observer()
     observer.schedule(event_handler, WATCH_DIR, recursive=True)
     observer.start()
     print(f"[WATCHDOG] Monitoring directory: {WATCH_DIR}")
+
+    # Second quick scan to catch files added during initial scan
+    for root, dirs, files in os.walk(WATCH_DIR):
+        for fname in files:
+            if fname.lower().endswith(".pdf"):
+                fpath = os.path.abspath(os.path.join(root, fname))
+                if fpath not in processed_files:
+                    print(f"[WATCHDOG] Second scan: found new PDF {fpath}")
+                    threading.Thread(target=event_handler._wait_for_complete, args=(fpath,), daemon=True).start()
+                    processed_files.add(fpath)
+
     try:
         while True:
             time.sleep(1)
