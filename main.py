@@ -216,4 +216,13 @@ async def filesystem(
     }
 
 
+
+app.mount(
+    "/pdf-images",
+    StaticFiles(directory=OUTPUT_GEN_IMAGE_DIR, html=True),
+    name="pdf-images"
+)
+
+
+
 app.mount("/", StaticFiles(directory="public", html=True), name="static")

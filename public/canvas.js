@@ -2,7 +2,7 @@
  * IndexedDB Helper for storing images and metadata
  */
 const DB_NAME = 'CanvasImagesDB';
-const STORE_NAME = 'images';
+var STORE_NAME = 'images';
 const DB_VERSION = 1;
 
 
@@ -65,7 +65,8 @@ function getTightBoundingBox(imageData) {
 }
 
 
-function openDB() {
+function _openDB() {
+  console.log('openDB', DB_NAME, STORE_NAME)
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
     request.onupgradeneeded = function (event) {
@@ -82,6 +83,42 @@ function openDB() {
     };
   });
 }
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    let request = indexedDB.open(DB_NAME);
+    let needsUpgrade = false;
+
+    request.onsuccess = function (event) {
+      const db = event.target.result;
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        // Must upgrade
+        db.close();
+        const newVersion = db.version + 1;
+        const upgradeRequest = indexedDB.open(DB_NAME, newVersion);
+        upgradeRequest.onupgradeneeded = function (e) {
+          const upgradedDB = e.target.result;
+          if (!upgradedDB.objectStoreNames.contains(STORE_NAME)) {
+            upgradedDB.createObjectStore(STORE_NAME, { keyPath: 'id' });
+          }
+        };
+        upgradeRequest.onsuccess = function (e) {
+          resolve(e.target.result);
+        };
+        upgradeRequest.onerror = function (e) {
+          reject(e.target.error);
+        };
+      } else {
+        resolve(db);
+      }
+    };
+
+    request.onerror = function (event) {
+      reject(event.target.error);
+    };
+  });
+}
+
 
 function saveImageWithMetadata(id, imageBlob, metadata = {}) {
   return openDB().then(db => {
@@ -110,6 +147,27 @@ function getImageWithMetadata(id) {
 
 function getAllImagesWithMetadata() {
   return openDB().then(db => {
+    // If store does not exist, create it and return []
+    if (!db.objectStoreNames.contains(STORE_NAME)) {
+      db.close();
+      // Bump version to trigger onupgradeneeded and create store
+      const request = indexedDB.open(DB_NAME, db.version );
+      request.onupgradeneeded = function (event) {
+        const db2 = event.target.result;
+        if (!db2.objectStoreNames.contains(STORE_NAME)) {
+          db2.createObjectStore(STORE_NAME, { keyPath: 'id' });
+        }
+      };
+      return new Promise((resolve, reject) => {
+        request.onsuccess = function () {
+          request.result.close();
+          resolve([]);
+        };
+        request.onerror = function (e) {
+          reject(e);
+        };
+      });
+    }
     return new Promise((resolve, reject) => {
       const tx = db.transaction(STORE_NAME, 'readonly');
       const store = tx.objectStore(STORE_NAME);
@@ -143,10 +201,82 @@ function blobToDataURL(blob) {
   });
 }
 
-function startCanvasEditor() {
+async function createArticleCard(name, img, id) {
+  var imgElem = document.createElement('img');
+  imgElem.setAttribute('class', 'card-img-center');
+
+  try {
+    const record = await getImageWithMetadata(id);
+    if (record && record.image) {
+      const dataURL = await blobToDataURL(record.image);
+      imgElem.setAttribute('src', dataURL);
+    } else {
+      imgElem.setAttribute('alt', 'Image not found');
+    }
+  } catch (err) {
+    imgElem.setAttribute('alt', 'Error loading image');
+    console.error('Failed to load image for card:', err);
+  }
+
+  imgElem.setAttribute('alt', name);
+
+  var card = document.createElement('div');
+  card.setAttribute('id', 'card');
+  card.setAttribute('class', 'card');
+
+  var a = document.createElement('a');
+  a.setAttribute('class', 'btn btn-primary');
+  a.setAttribute('onclick', 'changeCoverImage(' + "'" + id + "'" + ')');
+  a.innerText = name;
+
+  card.appendChild(imgElem);
+  card.appendChild(a);
+
+  $('#right-top').append(card);
+}
+
+async function changeCoverImage(id) {
+  console.log('changeCover');
+
+  try {
+    const record = await getImageWithMetadata(id);
+    if (!record || !record.image) {
+      console.warn('No image found in IndexedDB for id:', id);
+      return;
+    }
+    const _imageDataURL = await blobToDataURL(record.image);
+
+    $('#image').cropper('replace', _imageDataURL);
+    var image = new Image();
+    image.src = _imageDataURL;
+
+    _backupImage = clone(image);
+    StackMoves = [];
+    SpaceRect = [];
+  } catch (err) {
+    console.error('Failed to load image from IndexedDB:', err);
+  }
+}
+
+function loadRightTopFromIndexedDB() {
+  // Clear current cards
+  $('#right-top').empty();
+  getAllImagesWithMetadata().then(records => {
+    records.forEach(record => {
+      if (record && record.id) {
+        createArticleCard('added', record.id, record.id);
+      }
+    });
+  }).catch(err => {
+    console.error('Failed to load images from IndexedDB:', err);
+  });
+}
+
+function startCanvasEditor( namespace ) {
 
 
 
+  STORE_NAME = namespace;
 
 
   $('#image').cropper({
@@ -233,63 +363,7 @@ function startCanvasEditor() {
 
 
 
-  async function changeCoverImage(id) {
-    console.log('changeCover');
-
-    try {
-      const record = await getImageWithMetadata(id);
-      if (!record || !record.image) {
-        console.warn('No image found in IndexedDB for id:', id);
-        return;
-      }
-      const _imageDataURL = await blobToDataURL(record.image);
-
-      $('#image').cropper('replace', _imageDataURL);
-      var image = new Image();
-      image.src = _imageDataURL;
-
-      _backupImage = clone(image);
-      StackMoves = [];
-      SpaceRect = [];
-    } catch (err) {
-      console.error('Failed to load image from IndexedDB:', err);
-    }
-  }
-
-
-  async function createArticleCard(name, img, id) {
-    var imgElem = document.createElement('img');
-    imgElem.setAttribute('class', 'card-img-center');
-
-    try {
-      const record = await getImageWithMetadata(id);
-      if (record && record.image) {
-        const dataURL = await blobToDataURL(record.image);
-        imgElem.setAttribute('src', dataURL);
-      } else {
-        imgElem.setAttribute('alt', 'Image not found');
-      }
-    } catch (err) {
-      imgElem.setAttribute('alt', 'Error loading image');
-      console.error('Failed to load image for card:', err);
-    }
-
-    imgElem.setAttribute('alt', name);
-
-    var card = document.createElement('div');
-    card.setAttribute('id', 'card');
-    card.setAttribute('class', 'card');
-
-    var a = document.createElement('a');
-    a.setAttribute('class', 'btn btn-primary');
-    a.setAttribute('onclick', 'changeCoverImage(' + "'" + id + "'" + ')');
-    a.innerText = name;
-
-    card.appendChild(imgElem);
-    card.appendChild(a);
-
-    $('#right-top').append(card);
-  }
+  // (Removed duplicate createArticleCard and changeCoverImage from inside startCanvasEditor)
 
 
   function convertImageToCanvas(image) {
@@ -432,6 +506,7 @@ function startCanvasEditor() {
 
 
   function copyToNewCanvasResetCrop(ctxOld, ctxNew, CropBoxData) {
+    console.log('CropBoxData', CropBoxData)
     var imgData = ctxOld.getImageData(CropBoxData.x, CropBoxData.y, CropBoxData.width, CropBoxData.height);
     ctxNew.putImageData(imgData, 0, 0);
 
@@ -863,6 +938,8 @@ if (bbox) {
   } , 10)
    
    
+  // On editor start, load all images/cards from IndexedDB into right-top
+  loadRightTopFromIndexedDB();
 }
 
 
@@ -870,26 +947,25 @@ if (bbox) {
 
 
 // Footer toolbar: Center Image button logic
-$('#centerImageBtn').on('click', function () {
-  var cropper = $('#image').data('cropper');
-  if (!cropper) return;
-  // Clear any crop box/selections
-  cropper.clear();
-  // Reset image: fits image to screen, resets zoom/pan, and removes all transformations
-  cropper.reset();
-});
+// $('#centerImageBtn').on('click', function () {
+//   var cropper = $('#image').data('cropper');
+//   if (!cropper) return;
+//   // Clear any crop box/selections
+//   cropper.clear();
+//   // Reset image: fits image to screen, resets zoom/pan, and removes all transformations
+//   cropper.reset();
+// });
 
-// Footer toolbar: Toggle Cropper button logic
-$('#toggleCropperBtn').on('click', function () {
-  var cropper = $('#image').data('cropper');
-  if (!cropper) return;
-  if (cropper.enabled) {
-    cropper.disable();
-    // Optionally, visually indicate disabled state
-    $('#toggleCropperBtn').addClass('disabled');
-  } else {
-    cropper.enable();
-    $('#toggleCropperBtn').removeClass('disabled');
-  }
-});
-
+// // Footer toolbar: Toggle Cropper button logic
+// $('#toggleCropperBtn').on('click', function () {
+//   var cropper = $('#image').data('cropper');
+//   if (!cropper) return;
+//   if (cropper.enabled) {
+//     cropper.disable();
+//     // Optionally, visually indicate disabled state
+//     $('#toggleCropperBtn').addClass('disabled');
+//   } else {
+//     cropper.enable();
+//     $('#toggleCropperBtn').removeClass('disabled');
+//   }
+// });

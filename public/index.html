@@ -313,10 +313,20 @@ height: 50px;
 
 <script type="text/javascript">
   
-function startCropping(){
-  $('#image').attr('src', 'pic.jpg');
-  startCanvasEditor();
+function startCropping(image_path){
+  // $('#image').attr('src', 'pdf-images/' +   image_path );
+  // startCanvasEditor(image_path);
+
+  $('#image')
+  .attr('src', 'pdf-images/' + image_path)
+  .off('load') // ensure no duplicate handlers
+  .on('load', function () {
+    startCanvasEditor(image_path);
+  });
+
 }
+
+// startCropping()
 
 
 </script>
