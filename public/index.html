@@ -312,18 +312,22 @@ height: 50px;
 <script type="text/javascript" src="initAjax.js"></script>
 
 <script type="text/javascript">
-  
-function startCropping(image_path){
-  // $('#image').attr('src', 'pdf-images/' +   image_path );
-  // startCanvasEditor(image_path);
+let lastImagePath = null;
+
+function startCropping(image_path) {
+  if (lastImagePath === image_path) {
+    console.log("Same image, skipping...");
+    return;
+  }
+
+  lastImagePath = image_path;
 
   $('#image')
-  .attr('src', 'pdf-images/' + image_path)
-  .off('load') // ensure no duplicate handlers
-  .on('load', function () {
-    startCanvasEditor(image_path);
-  });
-
+    .off('load') // clear previous handler
+    .one('load', function () {
+      startCanvasEditor(image_path);
+    })
+    .attr('src', 'pdf-images/' + image_path + '?v=' + Date.now()); // optional cache bust
 }
 
 // startCropping()

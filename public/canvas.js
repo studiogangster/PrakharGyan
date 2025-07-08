@@ -181,6 +181,7 @@ function getAllImagesWithMetadata() {
 // Utility: Convert dataURL to Blob
 function dataURLToBlob(dataURL) {
   const arr = dataURL.split(',');
+  console.log(arr)
   const mime = arr[0].match(/:(.*?);/)[1];
   const bstr = atob(arr[1]);
   let n = bstr.length;
@@ -274,6 +275,7 @@ function loadRightTopFromIndexedDB() {
 
 function startCanvasEditor( namespace ) {
 
+  console.log('startCanvasEditor')
 
 
   STORE_NAME = namespace;
@@ -506,6 +508,17 @@ function startCanvasEditor( namespace ) {
 
 
   function copyToNewCanvasResetCrop(ctxOld, ctxNew, CropBoxData) {
+    // Validate CropBoxData
+    if (
+      !CropBoxData ||
+      CropBoxData.x < 0 || CropBoxData.y < 0 ||
+      CropBoxData.width <= 0 || CropBoxData.height <= 0 ||
+      CropBoxData.x + CropBoxData.width > ctxOld.canvas.width ||
+      CropBoxData.y + CropBoxData.height > ctxOld.canvas.height
+    ) {
+      console.warn('Invalid CropBoxData for copyToNewCanvasResetCrop:', CropBoxData);
+      return;
+    }
     console.log('CropBoxData', CropBoxData)
     var imgData = ctxOld.getImageData(CropBoxData.x, CropBoxData.y, CropBoxData.width, CropBoxData.height);
     ctxNew.putImageData(imgData, 0, 0);
@@ -526,6 +539,7 @@ function startCanvasEditor( namespace ) {
 
 
   function clearRect(image) {
+    console.log('clearRect')
     var elem_img = _backupImage;
     var canvas = convertImageToCanvas(elem_img);
     var ctx = canvas.getContext("2d");
@@ -894,8 +908,9 @@ if (bbox) {
   }
 
 
-  function initButtonSetup(image) {
+  function _initButtonSetup(image) {
 
+    console.log('initButtonSetup')
     EscapeKey(image);
     EnterKey(image);
     SpaceKey(image);
@@ -904,6 +919,187 @@ if (bbox) {
     ControlR(image)
     DeleteKey(image);
   }
+
+
+  function EnterKey(image) {
+    $(document).keypress(function (e) {
+      if (e.which == 13 && KeyState) {
+
+
+
+
+
+
+        SaveState();
+        console.log('MainStack', MainStack)
+        clearRect(image);
+
+        
+        console.log('done')
+
+
+  
+        // saveArtcleCropped(image);
+
+
+
+      }
+    });
+  }
+
+
+  function SpaceKey(image) {
+    $(document).keypress(function (e) {
+      if (e.which == 32 && KeyState) {
+
+        // var tmp = $('#image').cropper('getData')
+
+
+
+
+
+
+        blurRect(image, true);
+        //Save The cropped Area and Transform And Reset
+
+
+
+
+
+
+
+
+
+      }
+    });
+  }
+
+  function EscapeKey(image) {
+
+    $(document).keyup(function (e) {
+      if (e.keyCode == 27 && KeyState) {
+        // $(image).cropper('clear')
+        $(image).cropper('clear');
+      }
+    });
+
+  }
+
+  function DeleteKey(image) {
+
+    $(document).keyup(function (e) {
+        // console.log('deleteke' , e)
+       const isDeleteKey = e.key === 'Delete' || e.key == 'Backspace' || e.keyCode === 46;
+
+      if (isDeleteKey && KeyState) {
+        blurRect(image, false);
+      }
+    });
+
+  }
+
+
+  function ControlZ(image) {
+    $(document).keydown(function (e) {
+      if (e.keyCode == 90 && e.ctrlKey && KeyState) {
+        Undo();
+      }
+    });
+
+  }
+  function ControlR(image) {
+    $(document).keydown(function (e) {
+      if (e.keyCode == 82 && e.ctrlKey && KeyState) {
+        Redo();
+      }
+    });
+
+  }
+
+  function BackspaceKey(image) {
+
+    $(document).keyup(function (e) {
+      if (e.keyCode == 8 && KeyState) {
+        Undo();
+
+      }
+    });
+
+  }
+
+
+  function _initButtonSetup(image) {
+
+    console.log('initButtonSetup')
+    EscapeKey(image);
+    EnterKey(image);
+    SpaceKey(image);
+    // BackspaceKey(image);
+    ControlZ(image)
+    ControlR(image)
+    DeleteKey(image);
+  }
+
+  function initKeyHandlers(image) {
+    console.log('initKeyHandlers', 'new')
+  // Remove any previously bound handlers in the ".keyhandler" namespace
+  $(document).off('.keyhandler');
+
+  // Handle keypresses (Enter and Space)
+  $(document).on('keypress.keyhandler', function (e) {
+    if (!KeyState) return;
+
+    switch (e.which) {
+      case 13: // Enter
+        SaveState();
+        console.log('MainStack', MainStack);
+        clearRect(image);
+        console.log('done');
+        break;
+
+      case 32: // Space
+        blurRect(image, true);
+        break;
+    }
+  });
+
+  // Handle keyups (Escape, Delete, Backspace)
+  $(document).on('keyup.keyhandler', function (e) {
+    if (!KeyState) return;
+
+    if (e.key === 'Escape' || e.keyCode === 27) {
+      $(image).cropper('clear');
+    }
+
+    if (e.key === 'Delete' || e.key === 'Backspace' || e.keyCode === 46) {
+      blurRect(image, false);
+    }
+
+    if (e.keyCode === 8) { // Backspace
+      Undo();
+    }
+  });
+
+  // Handle keydowns (Ctrl+Z, Ctrl+R)
+  $(document).on('keydown.keyhandler', function (e) {
+    if (!KeyState) return;
+
+    if (e.ctrlKey && e.keyCode === 90) { // Ctrl+Z
+      Undo();
+    }
+
+    if (e.ctrlKey && e.keyCode === 82) { // Ctrl+R
+      Redo();
+    }
+  });
+}
+
+function initButtonSetup(image) {
+  console.log('initButtonSetup', 'new');
+  initKeyHandlers(image);
+}
+
+
 
   function Undo() {
     var tmp = SpaceRect.pop();
